@@ -1,0 +1,26 @@
+{
+  "name": "glibline",
+  "version": "0.0.1",
+  "description": "时间轴（timeline），用于实现根据时间对数据事件操作。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GlibWild/glibline.git"
+  },
+  "keywords": [
+    "timeline",
+    "vue3",
+    "ts",
+    "typescript",
+    "时间轴"
+  ],
+  "author": "GlibWild <1075012871@qq.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GlibWild/glibline/issues"
+  },
+  "homepage": "https://github.com/GlibWild/glibline#readme"
+}
