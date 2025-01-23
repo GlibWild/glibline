@@ -2,7 +2,7 @@
   "name": "glibline",
   "version": "0.0.1",
   "description": "时间轴（timeline），用于实现根据时间对数据事件操作。",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/GlibWild/glibline/issues"
   },
-  "homepage": "https://github.com/GlibWild/glibline#readme"
+  "homepage": "https://github.com/GlibWild/glibline#readme",
+  "dependencies": {
+    "dayjs": "^1.11.13"
+  }
 }
