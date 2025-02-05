@@ -1,7 +1,70 @@
 <!-- [![license](https://img.shields.io/github/license/anncwb/vue-vben-admin.svg)](LICENSE) -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/GlibWild/glibline/blob/master/LICENSE)
 
-### 测试
+### 安装
 ~~~
 npm install glibline
+~~~
+
+### 使用
+定义容器
+~~~
+<div id="container" style="width: 100%; height: 300px"></div>
+~~~
+初始化对象。LineOption参考引入：import LineOption from "glibline/models/lineOption"
+~~~
+const gline = new GlibLine(
+    "container",
+    new Date(2025, 0, 1),
+    new Date(2025, 0, 4, 23, 59, 59),
+    {
+      textWidth: 100,
+      tipBackground: "#cccccc7f",
+    }
+  );
+~~~
+设置组对象。GroupOption参考引入：import GroupOption from "glibline/models/groupOption"
+~~~
+const groups = [
+    new Group(1, "Group 1", [
+      new Item(
+        1,
+        "Item 1",
+        new Date(2025, 0, 1, 9, 0, 0),
+        new Date(2025, 0, 1, 12, 0, 0)
+      ),
+      new Item(
+        2,
+        "Item 2",
+        new Date(2025, 0, 2, 0, 0, 0),
+        new Date(2025, 0, 2, 3, 0, 0)
+      ),
+    ]),
+
+    new Group(
+      2,
+      "Group 2",
+
+      [
+        new Item(
+          3,
+          "Item 3",
+          new Date(2025, 0, 1, 3, 0, 0),
+          new Date(2025, 0, 1, 6, 0, 0)
+        ),
+        new Item(
+          4,
+          "Item 4",
+          new Date(2025, 0, 2, 0, 0, 0),
+          new Date(2025, 0, 2, 3, 0, 0)
+        ),
+      ],
+      {
+        textColor: "#ff0000",
+        backgroundColor: "#000000",
+        textSize: 13,
+      } as GroupOption
+    ),
+  ];
+  gline.setData(groups);
 ~~~

@@ -1,6 +1,8 @@
 import { h } from "./h";
 import dayjs from "dayjs";
+import { mergeObjs } from "./utils/utils";
 import Group from "./models/group";
+import LineOption from "./models/lineOption";
 
 class Timeline {
   //传入的父容器
@@ -19,8 +21,8 @@ class Timeline {
   private curTime: Date;
   //鼠标x轴位置
   private x: number;
-  //鼠标y轴位置（暂时未赋值）
-  private y: number = 100;
+  //鼠标y轴位置
+  private y: number = 0;
 
   //提示框
   private tipDiv: HTMLElement;
@@ -38,22 +40,32 @@ class Timeline {
   private yAxisLineDiv: HTMLElement;
   //y轴刻度
   private yAxisScaleDiv: HTMLElement;
-  //y轴文本
-  private yAxisTextDiv: HTMLElement;
-  //y轴文本显示宽度
-  private yAxisTextWidth: number = 40;
 
   //数据集（y轴）
   private data: Array<Group>;
 
-  constructor(containerId: string, startDate: Date, endDate: Date) {
+  //时间轴样式参数
+  private lineOptions: LineOption = new LineOption();
+
+  constructor(
+    containerId: string,
+    startDate: Date,
+    endDate: Date,
+    lineOptions?: LineOption
+  ) {
     console.log(startDate, endDate);
+    if (lineOptions) {
+      mergeObjs(this.lineOptions, lineOptions);
+    }
+    // this.lineOptions = lineOptions!;
+
     this.container = document.getElementById(containerId)!;
     this.container.style.position = "relative";
     this.startDate = startDate;
     this.endDate = endDate;
     this.zoomLevel = 1;
-    this.offset = 100;
+    console.log(this.lineOptions);
+    this.offset = this.lineOptions.textWidth!;
 
     const timelineContainer = this.createTimelineElement();
     this.container.appendChild(timelineContainer);
@@ -117,7 +129,7 @@ class Timeline {
           "div",
           {
             className: "timeline-x-scale",
-            style: `width:${length}px;font-size:14px;flex:0 0 auto;user-select:none;display:flex;justify-content:flex-end;flex-direction:column;`,
+            style: `width:${length}px;font-size:14px;flex:0 0 auto;user-select:none;display:flex;justify-content:flex-end;flex-direction:column;position:relative;left:${this.lineOptions.textWidth}px;z-index:1`,
           },
           h("div", {
             style:
@@ -136,7 +148,7 @@ class Timeline {
           "div",
           {
             className: "timeline-x-scale",
-            style: `width:${length}px;font-size:14px;flex:0 0 auto;user-select:none;display:flex;justify-content:flex-end;flex-direction:column;`,
+            style: `width:${length}px;font-size:14px;flex:0 0 auto;user-select:none;display:flex;justify-content:flex-end;flex-direction:column;position:relative;left:${this.lineOptions.textWidth}px;z-index:1`,
           },
           h("div", {
             style:
@@ -152,64 +164,100 @@ class Timeline {
       }
       this.timeline.appendChild(this.xAxisScaleDiv);
     }
-    this.tipDiv = h(
-      "div",
-      {
-        style: `position:absolute;color:#fff;top:${this.y}px;left:${this.x}px`,
-      },
-      h("div", {}, dayjs(this.curTime).format("YYYY-MM-DD HH:mm:ss")),
-      h("div", {}, this.offset + ";" + this.x)
-    );
+    if (this.x) {
+      let index = 0;
+      if (this.data) {
+        const height = this.timeline.clientHeight - this.xAxisLineHeight - 9;
+        const heightPerGroup = height / this.data.length;
+        const rect = this.timeline.getBoundingClientRect();
+        const y = this.y - rect.top;
+        index = Math.ceil(y / heightPerGroup);
+      }
 
-    this.tipLineDiv = h("div", {
-      style: `position:absolute;width:1px;height:calc(100% - 40px);background-color:#fff;left:${this.x}px;bottom:30px`,
-    });
+      this.tipDiv = h(
+        "div",
+        {
+          style: `position:absolute;color:${
+            this.lineOptions.tipColor
+          };background-color:${this.lineOptions.tipBackground};font-size:${
+            this.lineOptions.tipTextSize
+          }px;top:${this.y - 30}px;left:${this.x + 10}px;z-index:1`,
+        },
+        h("div", {}, dayjs(this.curTime).format("YYYY-MM-DD HH:mm:ss")),
+        h(
+          "div",
+          {},
+          this.data && index <= this.data.length && index > 0
+            ? this.data[index - 1].groupName
+            : ""
+        )
+      );
+
+      this.tipLineDiv = h("div", {
+        style: `position:absolute;width:1px;height:calc(100% - 30px);background-color:${this.lineOptions.tipLineColor};left:${this.x}px;bottom:30px;z-index:1`,
+      });
+      this.timeline.appendChild(this.tipLineDiv);
+      this.timeline.appendChild(this.tipDiv);
+    }
 
     this.xAxisLineDiv = h("div", {
-      style: `position:absolute;width:${timelineWidth}px;height:1px;background-color:#fff;bottom:30px`,
+      style: `position:absolute;width:${timelineWidth}px;height:1px;background-color:#fff;bottom:30px;left:${this.lineOptions.textWidth}px;`,
     });
 
     this.yAxisLineDiv = h("div", {
       className: "timeline-y-line",
-      style: `position:absolute;width:1px;height:calc(100% - 40px);background-color:#fff;bottom:30px;left:${
-        this.offset > 0 ? 0 : -this.offset
-      }px`,
+      style: `position:absolute;width:1px;height:calc(100% - 30px);background-color:#fff;bottom:30px;left:${
+        this.offset > 0
+          ? 0 + this.lineOptions.textWidth!
+          : -this.offset + this.lineOptions.textWidth!
+      }px;z-index:1`,
     });
 
     this.timeline.appendChild(this.yAxisLineDiv);
     this.timeline.appendChild(this.xAxisLineDiv);
-    this.timeline.appendChild(this.tipLineDiv);
-    this.timeline.appendChild(this.tipDiv);
 
-    this.drawTimeData();
+    this.drawTimeData(timelineWidth);
   }
 
-  private drawTimeData() {
+  private drawTimeData(timelineWidth: number) {
     if (this.data) {
-      const height = this.timeline.clientHeight - this.xAxisLineHeight;
+      const height = this.timeline.clientHeight - this.xAxisLineHeight - 9;
       const heightPerGroup = height / this.data.length;
       let index = 0;
 
       this.yAxisScaleDiv = h("div", {
         className: "timeline-y-scale",
-        style: `width:20px;height:${height}px;position:absolute;left:${
+        style: `width:${
+          this.lineOptions.textWidth
+        }px;height:${height}px;position:absolute;left:${
           this.offset > 0 ? 0 : -this.offset
-        }px;top:0;display:flex;flex-direction:column;justify-content:flex-end;`,
+        }px;top:0;display:flex;flex-direction:column;justify-content:flex-end`,
       });
 
       this.timeline.appendChild(this.yAxisScaleDiv);
-
       this.data.forEach((group) => {
+        const scaleLineDiv = h("div", {
+          style: `background:#666;width:${timelineWidth}px;height:1px;position:absolute;left:${
+            this.lineOptions.textWidth
+          }px;top:${index * heightPerGroup}px`,
+        });
+        this.timeline.appendChild(scaleLineDiv);
+
         const groupDiv = h(
           "div",
           {
             className: "timeline-group",
-            style: `width:100%;height:${heightPerGroup}px;display:flex;flex-direction:column;`,
+            style: `width:100%;height:${heightPerGroup}px;display:flex;position:relative;`,
           },
-          h("div", { style: "color:#fff" }, group.groupName)
+          h(
+            "div",
+            {
+              style: `color:#fff;overflow-wrap:break-word;flex:0 1 ${this.lineOptions.textWidth}px;padding-right:10px;background-color:#242424;height:100%;z-index:1;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;`,
+            },
+            group.groupName
+          )
         );
         this.yAxisScaleDiv.appendChild(groupDiv);
-        let timelineWidth = this.timeline.clientWidth * this.zoomLevel;
         group.items.forEach((item) => {
           let start = item.startTime.getTime() - this.startDate.getTime();
           let end = item.endTime.getTime() - this.startDate.getTime();
@@ -224,17 +272,24 @@ class Timeline {
           if (this.offset < 0) {
             left = left + this.offset;
           }
+          left += this.lineOptions.textWidth!;
           const itemDiv = h(
             "div",
             {
               className: "timeline-item",
               style: `width:${width}px;height:${
-                heightPerGroup * 0.8
-              }px;background-color:rgba(255,255,255,0.5);position:absolute;left:${left}px;top:${
-                heightPerGroup * index
-              }px;display:flex;justify-content:center;flex-direction:column`,
+                heightPerGroup * 0.5
+              }px;background-color:${
+                group.groupOptions.backgroundColor
+              };position:absolute;left:${left}px;display:flex;justify-content:center;flex-direction:column;top:50%;transform:translate(0,-50%);`,
             },
-            h("div", { style: "color:#fff" }, item.itemName)
+            h(
+              "div",
+              {
+                style: `color:${group.groupOptions.textColor};font-size:${group.groupOptions.textSize}px`,
+              },
+              item.itemName
+            )
           );
           groupDiv.appendChild(itemDiv);
         });
@@ -267,10 +322,12 @@ class Timeline {
 
   private isDragging = false;
   private lastX = 0;
+  private lastY = 0;
 
   private onMouseDown(event: MouseEvent) {
     this.isDragging = true;
     this.lastX = event.clientX;
+    this.lastY = event.clientY;
   }
 
   private onMouseMove(event: MouseEvent) {
@@ -286,12 +343,24 @@ class Timeline {
     let pixelsPerMs = timelineWidth / range;
 
     const rect = this.timeline.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const curDate = new Date(this.startDate.getTime() + x / pixelsPerMs);
+
+    // if (this.data) {
+    //   const height = this.timeline.clientHeight - this.xAxisLineHeight - 9;
+    //   const heightPerGroup = height / this.data.length;
+    //   const y = event.clientY - rect.top;
+    //   this.y = Math.ceil(y / heightPerGroup);
+    // }
+    this.y = event.clientY;
+
+    let x = event.clientX - rect.left;
+    if (x < this.lineOptions.textWidth!) x = this.lineOptions.textWidth!;
+    console.log(event.clientX, rect.left, x);
+    const curDate = new Date(
+      this.startDate.getTime() + (x - this.lineOptions.textWidth!) / pixelsPerMs
+    );
 
     this.curTime = curDate;
     this.x = x;
-    // this.y = 0;
     this.drawTimeline();
   }
 
