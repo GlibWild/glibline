@@ -1,8 +1,8 @@
 class Item {
-    public itemId: number;
-    public itemName: string;
-    public startTime: Date;
-    public endTime: Date;
+  public itemId: number;
+  public itemName: string;
+  public startTime: Date;
+  public endTime: Date;
 
   constructor(
     itemId: number,

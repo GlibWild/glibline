@@ -3,6 +3,8 @@ import dayjs from "dayjs";
 import { mergeObjs } from "./utils/utils";
 import Group from "./models/group";
 import LineOption from "./models/lineOption";
+import ItemWithSize from "./models/itemWithSize";
+import Menu from "./models/menu";
 
 class Timeline {
   //传入的父容器
@@ -43,9 +45,18 @@ class Timeline {
 
   //数据集（y轴）
   private data: Array<Group>;
+  //数据块占用分组空间的比例 取值范围（0-1）
+  private dataInGroupScale: number = 0.5;
+  //时间轴上边距
+  private lineTop: number = 20;
+  //时间轴左边距
+  private lineLeft: number = 20;
 
   //时间轴样式参数
   private lineOptions: LineOption = new LineOption();
+
+  //选中区域
+  private selectedDataDiv: HTMLElement;
 
   constructor(
     containerId: string,
@@ -53,18 +64,15 @@ class Timeline {
     endDate: Date,
     lineOptions?: LineOption
   ) {
-    console.log(startDate, endDate);
     if (lineOptions) {
       mergeObjs(this.lineOptions, lineOptions);
     }
-    // this.lineOptions = lineOptions!;
 
     this.container = document.getElementById(containerId)!;
     this.container.style.position = "relative";
     this.startDate = startDate;
     this.endDate = endDate;
     this.zoomLevel = 1;
-    console.log(this.lineOptions);
     this.offset = this.lineOptions.textWidth!;
 
     const timelineContainer = this.createTimelineElement();
@@ -81,14 +89,19 @@ class Timeline {
     const timelineContainer = h(
       "div",
       {
-        style: `width:calc(100% - 40px);height:calc(100% - 40px);position:absolute;top:20px;left:20px;overflow:hidden;display:flex`,
+        style: `width:calc(100% - ${this.lineTop * 2}px);height:calc(100% - ${
+          this.lineLeft * 2
+        }px);position:absolute;top:${this.lineTop}px;left:${
+          this.lineLeft
+        }px;overflow:hidden;display:flex`,
       },
       this.timeline
     );
     return timelineContainer;
   }
   private init() {
-    this.timeline.addEventListener("click", this.onClick.bind(this));
+    // this.timeline.addEventListener("click", this.onClick.bind(this));
+    this.timeline.addEventListener("dblclick", this.onDbClick.bind(this));
     this.timeline.addEventListener("wheel", this.onWheel.bind(this));
     this.timeline.addEventListener("mousedown", this.onMouseDown.bind(this));
     this.timeline.addEventListener("mousemove", this.onMouseMove.bind(this));
@@ -113,9 +126,7 @@ class Timeline {
 
   private drawTimeline() {
     this.timeline.innerHTML = "";
-    //scale(${this.zoomLevel})
     this.timeline.style.transform = ` translateX(${this.offset}px)`;
-    // console.log(this.timeline.clientWidth, this.zoomLevel);
     let timelineWidth = this.timeline.clientWidth * this.zoomLevel;
     let range = this.endDate.getTime() - this.startDate.getTime();
     let pixelsPerMs = timelineWidth / range;
@@ -164,41 +175,6 @@ class Timeline {
       }
       this.timeline.appendChild(this.xAxisScaleDiv);
     }
-    if (this.x) {
-      let index = 0;
-      if (this.data) {
-        const height = this.timeline.clientHeight - this.xAxisLineHeight - 9;
-        const heightPerGroup = height / this.data.length;
-        const rect = this.timeline.getBoundingClientRect();
-        const y = this.y - rect.top;
-        index = Math.ceil(y / heightPerGroup);
-      }
-
-      this.tipDiv = h(
-        "div",
-        {
-          style: `position:absolute;color:${
-            this.lineOptions.tipColor
-          };background-color:${this.lineOptions.tipBackground};font-size:${
-            this.lineOptions.tipTextSize
-          }px;top:${this.y - 30}px;left:${this.x + 10}px;z-index:1`,
-        },
-        h("div", {}, dayjs(this.curTime).format("YYYY-MM-DD HH:mm:ss")),
-        h(
-          "div",
-          {},
-          this.data && index <= this.data.length && index > 0
-            ? this.data[index - 1].groupName
-            : ""
-        )
-      );
-
-      this.tipLineDiv = h("div", {
-        style: `position:absolute;width:1px;height:calc(100% - 30px);background-color:${this.lineOptions.tipLineColor};left:${this.x}px;bottom:30px;z-index:1`,
-      });
-      this.timeline.appendChild(this.tipLineDiv);
-      this.timeline.appendChild(this.tipDiv);
-    }
 
     this.xAxisLineDiv = h("div", {
       style: `position:absolute;width:${timelineWidth}px;height:1px;background-color:#fff;bottom:30px;left:${this.lineOptions.textWidth}px;`,
@@ -218,11 +194,23 @@ class Timeline {
 
     this.drawTimeData(timelineWidth);
   }
+  //计算时间轴工作区高度以及分组高度
+  private getHeightPerGroup() {
+    const height = this.timeline.clientHeight - this.xAxisLineHeight - 9;
+    const heightPerGroup = height / this.data.length;
+    return { height, heightPerGroup };
+  }
+  //获取分组下标序号
+  private getGroupIndex(heightPerGroup) {
+    const rect = this.timeline.getBoundingClientRect();
+    const y = this.y - rect.top;
+    const index = Math.ceil(y / heightPerGroup);
+    return index;
+  }
 
   private drawTimeData(timelineWidth: number) {
     if (this.data) {
-      const height = this.timeline.clientHeight - this.xAxisLineHeight - 9;
-      const heightPerGroup = height / this.data.length;
+      const { height, heightPerGroup } = this.getHeightPerGroup();
       let index = 0;
 
       this.yAxisScaleDiv = h("div", {
@@ -235,6 +223,7 @@ class Timeline {
       });
 
       this.timeline.appendChild(this.yAxisScaleDiv);
+
       this.data.forEach((group) => {
         const scaleLineDiv = h("div", {
           style: `background:#666;width:${timelineWidth}px;height:1px;position:absolute;left:${
@@ -273,15 +262,25 @@ class Timeline {
             left = left + this.offset;
           }
           left += this.lineOptions.textWidth!;
+
+          (item as ItemWithSize).width = width;
+          (item as ItemWithSize).height =
+            heightPerGroup * this.dataInGroupScale;
+          (item as ItemWithSize).left = left;
+          (item as ItemWithSize).top =
+            (heightPerGroup - heightPerGroup * this.dataInGroupScale) / 2;
           const itemDiv = h(
             "div",
             {
               className: "timeline-item",
               style: `width:${width}px;height:${
-                heightPerGroup * 0.5
+                heightPerGroup * this.dataInGroupScale
               }px;background-color:${
                 group.groupOptions.backgroundColor
-              };position:absolute;left:${left}px;display:flex;justify-content:center;flex-direction:column;top:50%;transform:translate(0,-50%);`,
+              };position:absolute;left:${left}px;top:${
+                (heightPerGroup - heightPerGroup * this.dataInGroupScale) / 2
+              }px`,
+              // };position:absolute;left:${left}px;display:flex;justify-content:center;flex-direction:column;top:50%;transform:translate(0,-50%);`,
             },
             h(
               "div",
@@ -295,20 +294,152 @@ class Timeline {
         });
         index++;
       });
+
+      if (this.isSelecting) {
+        //绘制选中区域
+        let start = Math.min(this.lastX, this.endX);
+        let end = Math.max(this.lastX, this.endX);
+        if (end - start > 1) {
+          //由于offset小于0会发生位置偏移，因此需要对绘制的数据进行同等偏移
+          let left = start - this.offset - this.lineLeft;
+
+          let menus = [] as HTMLElement[];
+          if (this.lineOptions.menus) {
+            menus = this.lineOptions.menus.map((t) => {
+              const defaultMenu = {
+                text: "",
+                icon: "",
+                iconSize: 14,
+                textSize: 14,
+                clickEvent: (e: MouseEvent) => {},
+              };
+              const menu = new Menu({ ...defaultMenu, ...t });
+              return h(
+                "div",
+                {
+                  style: `z-index:2;display:flex;justify-content:center;flex-direction:column;cursor:pointer;padding:0 5px;align-items:center`,
+                  onmousedown: (e: MouseEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  },
+                  onclick: (e: MouseEvent) => {
+                    let startPx = Math.min(this.lastX, this.endX);
+                    let endPx = Math.max(this.lastX, this.endX);
+                    const startTime = this.getTimeByPx(startPx);
+                    const endTime = this.getTimeByPx(endPx);
+                    menu.clickEvent(e, startTime.curDate, endTime.curDate);
+                  },
+                },
+                h("img", {
+                  src: menu.icon,
+                  style: `width:${menu.iconSize}px;height:${menu.iconSize}px;`,
+                }),
+                h("div", { style: `font-size:${menu.textSize}px` }, menu.text)
+              );
+            });
+          }
+
+          this.selectedDataDiv = h(
+            "div",
+            {
+              class: "select-item",
+              style: `position:absolute;top:${this.selectTop}px;left:${left}px;display:flex`,
+            },
+            [
+              h("div", {
+                style: `background-color:${
+                  this.lineOptions.selectedColor
+                };height:${this.selectHeight}px;width:${
+                  end - start
+                }px;z-index:2;`,
+              }),
+
+              ...(this.lineOptions.menus ? menus : ""),
+            ]
+          );
+          this.timeline.appendChild(this.selectedDataDiv);
+        }
+      }
+
+      if (this.x) {
+        let index = 0;
+        if (this.data) {
+          index = this.getGroupIndex(heightPerGroup);
+        }
+        this.tipDiv = h(
+          "div",
+          {
+            style: `position:absolute;color:${
+              this.lineOptions.tipColor
+            };background-color:${this.lineOptions.tipBackground};font-size:${
+              this.lineOptions.tipTextSize
+            }px;top:${this.y - 30}px;left:${this.x + 10}px;z-index:1`,
+          },
+          h("div", {}, dayjs(this.curTime).format("YYYY-MM-DD HH:mm:ss")),
+          h(
+            "div",
+            {},
+            this.data && index <= this.data.length && index > 0
+              ? this.data[index - 1].groupName
+              : ""
+          )
+        );
+
+        this.tipLineDiv = h("div", {
+          style: `position:absolute;width:1px;height:calc(100% - 30px);background-color:${this.lineOptions.tipLineColor};left:${this.x}px;bottom:30px;z-index:1`,
+        });
+        this.timeline.appendChild(this.tipLineDiv);
+        this.timeline.appendChild(this.tipDiv);
+      }
     }
   }
 
-  private onClick(event: MouseEvent) {
-    // const rect = this.timeline.getBoundingClientRect();
-    // const x = event.clientX - rect.left;
-    // const range = this.endDate.getTime() - this.startDate.getTime();
-    // const clickedDate = new Date(
-    //   this.startDate.getTime() + (x / this.timeline.clientWidth) * range
-    // );
-    // console.log(
-    //   "Clicked date:",
-    //   dayjs(clickedDate).format("YYYY-MM-DD HH:mm:ss")
-    // );
+  //判断是否处于块数据中
+  private isInItems() {
+    let flag = false;
+    let height = 0;
+    let curItem;
+    let top = 0;
+    const { heightPerGroup } = this.getHeightPerGroup();
+    const index = this.getGroupIndex(heightPerGroup);
+    if (index <= 0 || index > this.data.length) flag = false;
+    else {
+      const x = this.x;
+      const y = this.y;
+      for (let i = 0; i < this.data[index - 1].items.length; i++) {
+        const t = this.data[index - 1].items[i];
+        const item = t as ItemWithSize;
+        let left = 0;
+        if (this.offset < 0) {
+          left = item.left - this.offset;
+        } else {
+          left = item.left;
+        }
+        if (
+          x >= left &&
+          x <= left + item.width &&
+          y >= item.top + heightPerGroup * (index - 1) + this.lineTop &&
+          y <=
+            item.top + heightPerGroup * (index - 1) + this.lineTop + item.height
+        ) {
+          top = item.top + heightPerGroup * (index - 1);
+          height = item.height;
+          curItem = item;
+          flag = true;
+          break;
+        }
+      }
+    }
+    return { flag, top, height, item: curItem };
+  }
+
+  private onDbClick(event: MouseEvent) {
+    event.preventDefault();
+    if (this.lineOptions.dblClickEvent) {
+      const { curDate } = this.getTimeByPx(this.x);
+      const { flag, top, height, item } = this.isInItems();
+      this.lineOptions.dblClickEvent(event, curDate, Object.assign({}, item));
+    }
   }
 
   private onWheel(event: WheelEvent) {
@@ -317,55 +448,67 @@ class Timeline {
 
     if (this.zoomLevel < 0.1) this.zoomLevel = 0.1;
     if (this.zoomLevel > 10) this.zoomLevel = 10;
+    this.isSelecting = false;
     this.drawTimeline();
   }
 
+  //是否处于拖拽状态
   private isDragging = false;
+  //是否处于选中状态，即当鼠标处于数据块中时不再触发拖动时间轴而是开始选中，当未处于数据块中则为拖动
+  private isSelecting = false;
   private lastX = 0;
-  private lastY = 0;
+  private endX = 0;
+  private selectTop = 0;
+  private selectHeight = 0;
 
   private onMouseDown(event: MouseEvent) {
+    event.preventDefault();
     this.isDragging = true;
     this.lastX = event.clientX;
-    this.lastY = event.clientY;
+    this.endX = event.clientX;
+    const { flag, top, height } = this.isInItems();
+    this.isSelecting = flag;
+    this.selectTop = top;
+    this.selectHeight = height;
   }
 
   private onMouseMove(event: MouseEvent) {
+    event.preventDefault();
     if (this.isDragging) {
-      const dx = event.clientX - this.lastX;
-      this.offset += dx / this.zoomLevel;
-      this.lastX = event.clientX;
-      // this.drawTimeline();
+      if (!this.isSelecting) {
+        const dx = event.clientX - this.lastX;
+        this.offset += dx / this.zoomLevel;
+        this.lastX = event.clientX;
+      } else {
+        //处理选中显示
+        this.endX = event.clientX;
+      }
     }
+    this.y = event.clientY;
 
+    const { curDate, x } = this.getTimeByPx(event.clientX);
+    this.x = x;
+    this.curTime = curDate;
+    this.drawTimeline();
+  }
+
+  private onMouseUp(event: MouseEvent) {
+    event.preventDefault();
+    this.isDragging = false;
+  }
+  private getTimeByPx(curX) {
     let timelineWidth = this.timeline.clientWidth * this.zoomLevel;
     let range = this.endDate.getTime() - this.startDate.getTime();
     let pixelsPerMs = timelineWidth / range;
 
     const rect = this.timeline.getBoundingClientRect();
+    let x = curX - rect.left;
 
-    // if (this.data) {
-    //   const height = this.timeline.clientHeight - this.xAxisLineHeight - 9;
-    //   const heightPerGroup = height / this.data.length;
-    //   const y = event.clientY - rect.top;
-    //   this.y = Math.ceil(y / heightPerGroup);
-    // }
-    this.y = event.clientY;
-
-    let x = event.clientX - rect.left;
     if (x < this.lineOptions.textWidth!) x = this.lineOptions.textWidth!;
-    console.log(event.clientX, rect.left, x);
     const curDate = new Date(
       this.startDate.getTime() + (x - this.lineOptions.textWidth!) / pixelsPerMs
     );
-
-    this.curTime = curDate;
-    this.x = x;
-    this.drawTimeline();
-  }
-
-  private onMouseUp(event: MouseEvent) {
-    this.isDragging = false;
+    return { curDate, x };
   }
 }
 

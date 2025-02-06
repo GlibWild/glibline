@@ -20,7 +20,28 @@ const gline = new GlibLine(
     {
       textWidth: 100,
       tipBackground: "#cccccc7f",
-    }
+      menus: [
+        {
+          text: "",
+          icon: VueIcon,
+          textSize: 12,
+          clickEvent: (e: MouseEvent, startTime: Date, endTime: Date) => {
+            console.log(e, startTime, endTime);
+          },
+        },
+        {
+          text: "测试",
+          icon: VueIcon,
+          textSize: 12,
+          clickEvent: (e: MouseEvent, startTime: Date, endTime: Date) => {
+            console.log(e, startTime, endTime);
+          },
+        },
+      ],
+      dblClickEvent: (e: MouseEvent, curTime: Date, item) => {
+        console.log("double click", curTime, item);
+      },
+    } as LineOption
   );
 ~~~
 设置组对象。GroupOption参考引入：import GroupOption from "glibline/models/groupOption"

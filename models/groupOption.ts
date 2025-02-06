@@ -1,7 +1,7 @@
 class GroupOption {
-  public textColor?: string = "#fff";
-  public backgroundColor?: string = "#999";
-  public textSize?: number = 14;
+  public textColor?;
+  public backgroundColor?;
+  public textSize?;
 
   constructor(textColor: string = "#fff", backgroundColor: string = "#999", textSize: number = 14) {
     this.textColor = textColor;
