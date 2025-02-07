@@ -1,3 +1,4 @@
+import Group from "./group";
 import Item from "./item";
 import Menu from "./menu";
 
@@ -12,7 +13,8 @@ class LineOption {
   public dblClickEvent?: (
     e: MouseEvent,
     curTime: Date,
-    item: Item | undefined
+    item: Item | undefined,
+    group: Group | undefined
   ) => void;
   constructor(
     textWidth: number = 60,
@@ -25,7 +27,8 @@ class LineOption {
     dblClickEvent?: (
       e: MouseEvent,
       curTime: Date,
-      item: Item | undefined
+      item: Item | undefined,
+      group: Group | undefined
     ) => void
   ) {
     this.tipColor = tipColor;
