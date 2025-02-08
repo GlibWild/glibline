@@ -15,8 +15,9 @@ npm install glibline
 ~~~
 <div id="container" style="width: 100%; height: 300px"></div>
 ~~~
-初始化对象。LineOption参考引入：import LineOption from "glibline/models/lineOption"
+初始化对象。LineOption参考引入：import {LineOption} from "glibline"
 ~~~
+import GlibLine,{LineOption,GroupOption} from 'glibline'
 const gline = new GlibLine(
     "container",
     new Date(2025, 0, 1),
@@ -48,7 +49,7 @@ const gline = new GlibLine(
     } as LineOption
   );
 ~~~
-设置组对象。GroupOption参考引入：import GroupOption from "glibline/models/groupOption"
+设置组对象。GroupOption参考引入：import {GroupOption} from "glibline"
 ~~~
 const groups = [
     new Group(1, "Group 1", [

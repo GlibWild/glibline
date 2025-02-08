@@ -1,6 +1,6 @@
 import Group from "./group";
 
-class Menu {
+export default class Menu {
   public text: string = "";
   public icon: string = "";
   /**仅支持非路径图片图标 */
@@ -39,5 +39,3 @@ class Menu {
     this.clickEvent = clickEvent;
   }
 }
-
-export default Menu;

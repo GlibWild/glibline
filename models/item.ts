@@ -1,4 +1,4 @@
-class Item {
+export default class Item {
   public itemId: number;
   public itemName: string;
   public startTime: Date;
@@ -16,5 +16,3 @@ class Item {
     this.endTime = endTime;
   }
 }
-
-export default Item;

@@ -2,7 +2,7 @@ import Group from "./group";
 import Item from "./item";
 import Menu from "./menu";
 
-class LineOption {
+export default class LineOption {
   public xAxisColor?;
   public xAxisBgColor?;
   public yAxisColor?;
@@ -25,7 +25,7 @@ class LineOption {
     xAxisColor: string = "#fff",
     xAxisBgColor: string = "transparent",
     yAxisColor: string = "#fff",
-    yAxisBgColor: string = "#666",
+    yAxisBgColor: string = "transparent",
     textWidth: number = 60,
     tipTextSize: number = 14,
     tipColor: string = "#fff",
@@ -59,5 +59,3 @@ class LineOption {
     this.menus = menus;
   }
 }
-
-export default LineOption;
