@@ -3,6 +3,11 @@ import Item from "./item";
 import Menu from "./menu";
 
 class LineOption {
+  public xAxisColor?;
+  public xAxisBgColor?;
+  public yAxisColor?;
+  public yAxisBgColor?;
+
   public textWidth?;
   public tipTextSize?;
   public tipColor?;
@@ -17,6 +22,10 @@ class LineOption {
     group: Group | undefined
   ) => void;
   constructor(
+    xAxisColor: string = "#fff",
+    xAxisBgColor: string = "transparent",
+    yAxisColor: string = "#fff",
+    yAxisBgColor: string = "#666",
     textWidth: number = 60,
     tipTextSize: number = 14,
     tipColor: string = "#fff",
@@ -31,6 +40,10 @@ class LineOption {
       group: Group | undefined
     ) => void
   ) {
+    this.xAxisColor = xAxisColor;
+    this.xAxisBgColor = xAxisBgColor;
+    this.yAxisColor = yAxisColor;
+    this.yAxisBgColor = yAxisBgColor;
     this.tipColor = tipColor;
     this.textWidth = textWidth;
     this.tipTextSize = tipTextSize;

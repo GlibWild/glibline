@@ -12,4 +12,18 @@ function mergeObjs<T>(obj1: T, obj2: T) {
   }
   return obj1;
 }
-export { mergeObjs };
+
+/**
+ * 判断字符串是否为路径
+ * @param str
+ * @returns
+ */
+function isPath(str) {
+  // 综合的路径正则表达式，包括文件路径和HTTP/HTTPS URL
+  const pathRegex =
+    /^(\/|\.\/|\.\.\/|[a-zA-Z]:\\|https?:\/\/|www\.)[^<>:"|?*]+$/;
+
+  return pathRegex.test(str);
+}
+
+export { mergeObjs, isPath };
