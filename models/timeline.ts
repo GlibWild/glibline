@@ -382,7 +382,7 @@ class Timeline {
             this.lineOptions.tipColor
           };background-color:${this.lineOptions.tipBackground};font-size:${
             this.lineOptions.tipTextSize
-          }px;top:${this.y}px;left:${this.x + 10}px;z-index:1`,
+          }px;top:${this.y}px;left:${this.x + 10}px;z-index:1;min-width:150px;`,
         },
         h(
           "div",
