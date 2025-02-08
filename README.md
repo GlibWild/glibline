@@ -6,6 +6,10 @@
 npm install glibline
 ~~~
 
+### 提醒
+##### 1. 选中菜单支持图片类型路径，以及fontawesome等样式，但是需要调用本组件项目已经完成对fontawesome的样式支持，否则无法展示
+##### 2. 当为图片类型路径时，iconColor无效
+
 ### 使用
 定义容器
 ~~~
