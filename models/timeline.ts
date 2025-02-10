@@ -566,12 +566,21 @@ class Timeline {
   }
   private onWheel(event: WheelEvent) {
     event.preventDefault();
+
+    const old_time = this.getTimeByPx(this.x);
+
     this.zoomLevel -= event.deltaY * 0.001;
 
     if (this.zoomLevel < 0.1) this.zoomLevel = 0.1;
     if (this.zoomLevel > 10) this.zoomLevel = 10;
 
     this.isSelecting = false;
+
+    const x = this.getPxByTime(old_time);
+    this.offset -= x - this.x;
+    this.x = x;
+    console.log(x, this.x, this.offset);
+
     this.drawTimeline();
   }
 
@@ -620,6 +629,11 @@ class Timeline {
     event.preventDefault();
     this.isDragging = false;
   }
+  /**
+   * 像素点转时间点
+   * @param x
+   * @returns
+   */
   private getTimeByPx(x) {
     let timelineWidth = this.timeline.clientWidth * this.zoomLevel;
     let range = this.endDate.getTime() - this.startDate.getTime();
@@ -629,6 +643,20 @@ class Timeline {
       this.startDate.getTime() + (x - this.lineOptions.textWidth!) / pixelsPerMs
     );
     return curDate;
+  }
+
+  /**
+   * 时间点转像素点
+   * @param date
+   * @returns
+   */
+  private getPxByTime(date: Date) {
+    let timelineWidth = this.timeline.clientWidth * this.zoomLevel;
+    let range = this.endDate.getTime() - this.startDate.getTime();
+    let pixelsPerMs = timelineWidth / range;
+    let offsetTime = date.getTime() - this.startDate.getTime();
+    let x = offsetTime * pixelsPerMs + this.lineOptions.textWidth!;
+    return x;
   }
 }
 
