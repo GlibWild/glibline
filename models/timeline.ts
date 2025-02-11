@@ -376,13 +376,20 @@ class Timeline {
       if (this.data) {
         index = this.getGroupIndex(heightPerGroup);
       }
-
-      const left =
-        this.offset > 0
-          ? 0 + this.lineOptions.textWidth!
-          : -this.offset + this.lineOptions.textWidth!;
-      if (this.x < left) {
-        this.x = left;
+      if (this.data) {
+        const left =
+          this.offset >= 0
+            ? 0 + this.lineOptions.textWidth!
+            : -this.offset + this.lineOptions.textWidth!;
+        if (this.x < left) {
+          this.x = left;
+        }
+      } else {
+        console.log(this.offset, this.x, this.lineOptions.textWidth);
+        const left = this.lineOptions.textWidth!;
+        if (this.x < left) {
+          this.x = left;
+        }
       }
       if (
         this.x >
