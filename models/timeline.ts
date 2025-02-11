@@ -371,9 +371,26 @@ class Timeline {
   private drawTipArea() {
     const { height, heightPerGroup } = this.getHeightPerGroup();
     if (this.x) {
+      console.log(this.x, this.offset);
       let index = 0;
       if (this.data) {
         index = this.getGroupIndex(heightPerGroup);
+      }
+
+      const left =
+        this.offset > 0
+          ? 0 + this.lineOptions.textWidth!
+          : -this.offset + this.lineOptions.textWidth!;
+      if (this.x < left) {
+        this.x = left;
+      }
+      if (
+        this.x >
+        this.timeline.clientWidth * this.zoomLevel + this.lineOptions.textWidth!
+      ) {
+        this.x =
+          this.timeline.clientWidth * this.zoomLevel +
+          this.lineOptions.textWidth!;
       }
       this.tipDiv = h(
         "div",
