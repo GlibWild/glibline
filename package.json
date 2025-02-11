@@ -1,6 +1,6 @@
 {
   "name": "glibline",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "时间轴（timeline），用于实现根据时间对数据事件操作。",
   "main": "index.ts",
   "scripts": {
