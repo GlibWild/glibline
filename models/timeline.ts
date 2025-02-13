@@ -462,8 +462,15 @@ class Timeline {
                   e.stopPropagation();
                 },
                 onclick: (e: MouseEvent) => {
-                  let startPx = Math.min(this.lastX, this.endX);
-                  let endPx = Math.max(this.lastX, this.endX);
+                  const rect = this.timeline.getBoundingClientRect();
+                  let startPx = Math.min(
+                    this.lastX - rect.left,
+                    this.endX - rect.left
+                  );
+                  let endPx = Math.max(
+                    this.lastX - rect.left,
+                    this.endX - rect.left
+                  );
                   const startTime = this.getTimeByPx(startPx);
                   const endTime = this.getTimeByPx(endPx);
                   const { heightPerGroup } = this.getHeightPerGroup();
