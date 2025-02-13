@@ -371,7 +371,6 @@ class Timeline {
   private drawTipArea() {
     const { height, heightPerGroup } = this.getHeightPerGroup();
     if (this.x) {
-      console.log(this.x, this.offset);
       let index = 0;
       if (this.data) {
         index = this.getGroupIndex(heightPerGroup);
@@ -385,7 +384,6 @@ class Timeline {
           this.x = left;
         }
       } else {
-        console.log(this.offset, this.x, this.lineOptions.textWidth);
         const left = this.lineOptions.textWidth!;
         if (this.x < left) {
           this.x = left;
@@ -603,7 +601,6 @@ class Timeline {
     const x = this.getPxByTime(old_time);
     this.offset -= x - this.x;
     this.x = x;
-    console.log(x, this.x, this.offset);
 
     this.drawTimeline();
   }
